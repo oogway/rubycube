@@ -104,7 +104,7 @@ puts racer.turn_left
 # The line below will raise an error since BadCar does not satisfy
 # Drivable and ENV['RUBY_INTERFACE_TYPECHECK'] has been set to "1"
 # above
-racer1 = RaceDriver.create(BarCar.new)
+racer1 = RaceDriver.create(BadCar.new)
 
 # If ENV['RUBY_INTERFACE_TYPECHECK'] is set to "0" above, the following
 # line will print `:error`
