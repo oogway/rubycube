@@ -7,7 +7,7 @@ It provides interfaces, traits and runtime interface checks in Ruby
 `gem rubycube` in your Gemfile
 
 ### Theory
-https://archive.org/details/T_Reenskaug__Working_with_Objects_The_Ooram_Software_Engineering_method
+
 http://web.archive.org/web/20061209142330/http://www.iam.unibe.ch/~scg/Archive/Papers/Scha02bTraits.pdf
 
 ### Synopsis
