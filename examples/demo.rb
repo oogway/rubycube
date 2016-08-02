@@ -15,7 +15,7 @@ Calculator = interface {
   proto(:pos, [Integer], Integer) { [Integer, NilClass].to_set }
 }
 
-class SimpleCalc
+class SimpleCalcImpl
   def fact(n)
     (2..n).reduce(1) { |m, e| m * e }
   end
@@ -29,7 +29,8 @@ class SimpleCalc
   end
 end
 
-c = SimpleCalc.as_interface(Calculator).new
+SimpleCalc = SimpleCalcImpl.as_interface(Calculator)
+c = SimpleCalc.new
 # If SimpleCalc does not have `implements Calculator`, but its methods match the interface
 # you can "cast" it to Calculator - `SimpleCalc.as_interface(Calculator).new`
 # This is useful for casting classes that you did not write

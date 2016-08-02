@@ -35,18 +35,18 @@ module Cube
 
     def append_features(mod)
       return super if Interface === mod
-  
+
       # Is this a sub-interface?
       inherited = (self.ancestors-[self]).select{ |x| Interface === x }
       inherited_ids = inherited.map{ |x| x.instance_variable_get('@ids') }
-  
+
       # Store required method ids
       inherited_specs = map_spec(inherited_ids.flatten)
       specs = @ids.merge(inherited_specs)
       ids = @ids.keys + map_spec(inherited_ids.flatten).keys
       @unreq ||= []
-  
-  
+
+
       # Iterate over the methods, minus the unrequired methods, and raise
       # an error if the method has not been defined.
       mod_public_instance_methods = mod.public_instance_methods(true)
@@ -60,44 +60,58 @@ module Cube
           replace_check_method(mod, id, spec[:in], spec[:out])
         end
       end
-  
+
       inherited_private_ids = inherited.map{ |x| x.instance_variable_get('@private_ids') }
       # Store required method ids
       private_ids = @private_ids.keys + map_spec(inherited_private_ids.flatten).keys
-  
+
       # Iterate over the methods, minus the unrequired methods, and raise
       # an error if the method has not been defined.
       mod_all_methods = mod.instance_methods(true) + mod.private_instance_methods(true)
-  
+
       (private_ids - @unreq).uniq.each do |id|
         id = id.to_s if RUBY_VERSION.to_f < 1.9
         unless mod_all_methods.include?(id)
           raise Interface::PrivateVisibleMethodMissing, "#{mod}: #{self}##{id}"
         end
       end
-  
+
       super mod
     end
-  
+
+    def stash_method(mod, id)
+      unless mod.instance_variable_defined?('@__interface_stashed_methods')
+        mod.instance_variable_set('@__interface_stashed_methods', {})
+      end
+      mod.instance_variable_get('@__interface_stashed_methods')[id] = mod.instance_method(id)
+    end
+
+    def stashed_method(mod, id)
+      return nil unless mod.instance_variable_defined?('@__interface_stashed_methods')
+      mod.instance_variable_get('@__interface_stashed_methods')[id]
+    end
+
     def replace_check_method(mod, id, inchecks, outcheck)
-      orig_method = mod.instance_method(id)
-  
+      stashed_meth = stashed_method(mod, id)
+      orig_method = stashed_meth || mod.instance_method(id)
       unless mod.instance_variable_defined?("@__interface_arity_skip") \
         && mod.instance_variable_get("@__interface_arity_skip")
         orig_arity = orig_method.parameters.size
         check_arity = inchecks.size
         if orig_arity != check_arity
           raise Interface::MethodArityError,
-            "#{mod}: #{self}##{id} arity mismatch: #{orig_arity} instead of #{check_arity}"
+                "#{mod}: #{self}##{id} arity mismatch: #{orig_arity} instead of #{check_arity}"
         end
       end
-  
+
       unless ENV['RUBY_CUBE_TYPECHECK'].to_i > 0 \
         && mod.instance_variable_defined?("@__interface_runtime_check") \
         && mod.instance_variable_get("@__interface_runtime_check")
         return
       end
+      return if stashed_meth
       iface = self
+      stash_method(mod, id)
       mod.class_exec do
         ns_meth_name = "#{id}_#{SecureRandom.hex(3)}".to_sym 
         alias_method ns_meth_name, id
@@ -108,7 +122,7 @@ module Cube
               check_type(t, v)
             rescue Interface::TypeMismatchError => e
               raise Interface::TypeMismatchError,
-                "#{mod}: #{iface}##{id} (arg: #{i}): #{e.message}"
+                    "#{mod}: #{iface}##{id} (arg: #{i}): #{e.message}"
             end
           end
           ret = send(ns_meth_name, *args)
@@ -122,14 +136,14 @@ module Cube
         end
       end
     end
-  
+
     #  def verify_arity(mod, meth)
     #    arity = mod.instance_method(meth).arity
     #    unless arity == @ids[meth]
     #      raise Interface::MethodArityError, "#{mod}: #{self}##{meth}=#{arity}. Should be #{@ids[meth]}"
     #    end
     #  end
-  
+
     def map_spec(ids)
       ids.reduce({}) do |res, m|
         if m.is_a?(Hash)
@@ -139,7 +153,7 @@ module Cube
         end
       end
     end
-  
+
     def validate_spec(spec)
       [*spec].each do |t|
         if t.is_a?(Array)
@@ -151,7 +165,7 @@ module Cube
         end
       end
     end
-  
+
     public
     # Accepts an array of method names that define the interface.  When this
     # module is included/implemented, those method names must have already been
@@ -160,14 +174,14 @@ module Cube
     def required_public_methods
       @ids.keys
     end
-  
+
     def proto(meth, *args)
       out_spec = yield if block_given?
       validate_spec(args)
       validate_spec(out_spec) if out_spec
       @ids.merge!({ meth.to_sym => { in: args, out: out_spec }})
     end
-  
+
     def public_visible(*ids)
       unless ids.all? { |id| id.is_a?(Symbol) || id.is_a?(String) }
         raise ArgumentError, "Arguments should be strings or symbols"
@@ -175,7 +189,7 @@ module Cube
       spec = map_spec(ids)
       @ids.merge!(spec)
     end
-  
+
     def private_visible(*ids)
       unless ids.all? { |id| id.is_a?(Symbol) || id.is_a?(String) }
         raise ArgumentError, "Arguments should be strings or symbols"
@@ -191,7 +205,7 @@ module Cube
       @unreq ||= []
       @unreq += ids
     end
-  
+
     def shell
       ids = @ids
       unreq = @unreq
@@ -220,13 +234,13 @@ class Object
       if t.is_a?(Set)
         unless t.any? { |tp| check_type(tp, v) rescue false }
           raise Cube::Interface::TypeMismatchError,
-            "#{v.inspect} is not any of #{tp.to_a}" unless v.is_a?(tp)
+                "#{v.inspect} is not any of #{tp.to_a}" unless v.is_a?(tp)
         end
         return
       end
       if t.is_a? Array
         raise Cube::Interface::TypeMismatchError,
-          "#{v} is not an Array" unless v.is_a? Array
+              "#{v} is not an Array" unless v.is_a? Array
         check_type(t.first, v.first)
         check_type(t.first, v.last)
         return
