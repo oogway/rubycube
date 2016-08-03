@@ -1,12 +1,12 @@
 # run as `RUBY_CUBE_TYPECHECK= 1 ruby examples/demo.rb`
 require_relative '../lib/cube'
 
-Adder = interface {
+Adder = Cube.interface {
   # sum is a method that takes an array of Integer and returns an Integer
   proto(:sum, [Integer]) { Integer }
 }
 
-Calculator = interface {
+Calculator = Cube.interface {
   # interfaces can be composed
   extends Adder
   # method fact takes an Integer and returns an Integer
@@ -29,15 +29,14 @@ class SimpleCalcImpl
   end
 end
 
-SimpleCalc = SimpleCalcImpl.as_interface(Calculator)
+SimpleCalc = Cube[SimpleCalcImpl].as_interface(Calculator)
+# OR
+# SimpleCalc = Cube.from(SimpleCalcImpl).as_interface(Calculator)
 c = SimpleCalc.new
-# If SimpleCalc does not have `implements Calculator`, but its methods match the interface
-# you can "cast" it to Calculator - `SimpleCalc.as_interface(Calculator).new`
-# This is useful for casting classes that you did not write
 p c.sum([1, 2])
 p c.pos([1, 2, 3], 4)
 
-AdvancedCalculator = interface {
+AdvancedCalculator = Cube.interface {
   extend Calculator
   proto(:product, Integer, Integer) { Integer }
 }

@@ -120,7 +120,7 @@ module Cube
             # the value and expected type of the arg
             v, t = args[i], inchecks[i]
             begin
-              check_type(t, v)
+              Cube.check_type(t, v)
             rescue Interface::TypeMismatchError => e
               raise Interface::TypeMismatchError,
                     "#{mod}: #{iface}##{id} (arg: #{i}): #{e.message}"
@@ -130,7 +130,7 @@ module Cube
           ret = send(ns_meth_name, *args)
           # check return type if it exists
           begin
-            check_type(outcheck, ret) if outcheck
+            Cube.check_type(outcheck, ret) if outcheck
           rescue Interface::TypeMismatchError => e
             raise Interface::TypeMismatchError,
               "#{mod}: #{iface}##{id} (return): #{e.message}"
@@ -199,61 +199,61 @@ module Cube
           define_method(m) { |*args| }
         end
       end
-      cls.send(:shell_implements, self)
+      Cube[cls].send(:shell_implements, self)
     end
   end
 end
 
-class Object
-  def interface(&block)
-    mod = Module.new
-    mod.extend(Cube::Interface)
-    mod.instance_variable_set('@ids', {})
-    mod.instance_variable_set('@private_ids', {})
-    mod.instance_eval(&block)
-    mod
-  end
-
-  if ENV['RUBY_CUBE_TYPECHECK'].to_i > 0
-    def check_type(t, v)
-      if t.is_a?(Set)
-        unless t.any? { |tp| check_type(tp, v) rescue false }
-          raise Cube::Interface::TypeMismatchError,
-                "#{v.inspect} is not any of #{tp.to_a}" unless v.is_a?(tp)
-        end
-        return
-      end
-      if t.is_a? Array
-        raise Cube::Interface::TypeMismatchError,
-              "#{v} is not an Array" unless v.is_a? Array
-        check_type(t.first, v.first)
-        check_type(t.first, v.last)
-        return
-      end
-      raise Cube::Interface::TypeMismatchError, "#{v.inspect} is not type #{t}" unless v.is_a? t
-      true
-    end
-  else
-    def check_type(*_); end
-  end
-end
-
-class Module
-  def as_interface(iface, runtime_checks: true)
-    raise ArgumentError, "#{iface} is not a Cube::Interface" unless iface.is_a?(Cube::Interface)
-    implements = lambda { |this|
-      unless this.is_a? Class
-        raise "Non-Class modules should not implement interfaces"
-      end
-      this.instance_variable_set(:@__interface_runtime_check, true) if runtime_checks
-      this.include(iface)
-    }
-    implements.call(clone)
-  end
-
-  def shell_implements(mod)
-    instance_variable_set(:@__interface_runtime_check, false)
-    instance_variable_set(:@__interface_arity_skip, true)
-    include(mod)
-  end
-end
+#class Object
+#  def interface(&block)
+#    mod = Module.new
+#    mod.extend(Cube::Interface)
+#    mod.instance_variable_set('@ids', {})
+#    mod.instance_variable_set('@private_ids', {})
+#    mod.instance_eval(&block)
+#    mod
+#  end
+#
+#  if ENV['RUBY_CUBE_TYPECHECK'].to_i > 0
+#    def check_type(t, v)
+#      if t.is_a?(Set)
+#        unless t.any? { |tp| check_type(tp, v) rescue false }
+#          raise Cube::Interface::TypeMismatchError,
+#                "#{v.inspect} is not any of #{tp.to_a}" unless v.is_a?(tp)
+#        end
+#        return
+#      end
+#      if t.is_a? Array
+#        raise Cube::Interface::TypeMismatchError,
+#              "#{v} is not an Array" unless v.is_a? Array
+#        check_type(t.first, v.first)
+#        check_type(t.first, v.last)
+#        return
+#      end
+#      raise Cube::Interface::TypeMismatchError, "#{v.inspect} is not type #{t}" unless v.is_a? t
+#      true
+#    end
+#  else
+#    def check_type(*_); end
+#  end
+#end
+#
+#class Module
+#  def as_interface(iface, runtime_checks: true)
+#    raise ArgumentError, "#{iface} is not a Cube::Interface" unless iface.is_a?(Cube::Interface)
+#    implements = lambda { |this|
+#      unless this.is_a? Class
+#        raise "Non-Class modules should not implement interfaces"
+#      end
+#      this.instance_variable_set(:@__interface_runtime_check, true) if runtime_checks
+#      this.include(iface)
+#    }
+#    implements.call(clone)
+#  end
+#
+#  def shell_implements(mod)
+#    instance_variable_set(:@__interface_runtime_check, false)
+#    instance_variable_set(:@__interface_arity_skip, true)
+#    include(mod)
+#  end
+#end

@@ -10,13 +10,13 @@ require 'cube'
 
 class TC_Interface < Test::Unit::TestCase
   def self.startup
-    alpha_interface = interface{
+    alpha_interface = Cube.interface{
       public_visible(:alpha, :beta)
       proto(:beta) { [Integer, NilClass].to_set }
       proto(:delta, Integer, String, Integer) { Integer }
     }
 
-    gamma_interface = interface{
+    gamma_interface = Cube.interface{
       extends alpha_interface
       public_visible :gamma
     }
@@ -47,7 +47,7 @@ class TC_Interface < Test::Unit::TestCase
 
 
   def checker_method(arg)
-    check_type(@@gamma_interface, arg)
+    Cube.check_type(@@gamma_interface, arg)
   end
 
   def test_version
@@ -70,37 +70,37 @@ class TC_Interface < Test::Unit::TestCase
 
   def test_gamma_interface_requirements_met
     assert_raise(Cube::Interface::MethodArityError) { C.new.extend(@@gamma_interface) }
-    assert_raise(Cube::Interface::MethodArityError) { C.as_interface(@@gamma_interface) }
+    assert_raise(Cube::Interface::MethodArityError) { Cube[C].as_interface(@@gamma_interface) }
   end
 
   def test_method_check
-    assert_raise(Cube::Interface::TypeMismatchError) { checker_method(B.as_interface(@@alpha_interface).new) }
+    assert_raise(Cube::Interface::TypeMismatchError) { checker_method(Cube[B].as_interface(@@alpha_interface).new) }
   end
 
   def test_runtime_error_check
     assert_nothing_raised {
-      B.as_interface(@@alpha_interface).as_interface(@@alpha_interface)
+      Cube[B].as_interface(@@alpha_interface).as_interface(@@alpha_interface)
     }
     assert_nothing_raised {
-      B.as_interface(@@alpha_interface, runtime_checks: true).new.beta
+      Cube[B].as_interface(@@alpha_interface, runtime_checks: true).new.beta
     }
     assert_raise(ArgumentError) {
-      B.as_interface(@@alpha_interface).new.delta
+      Cube[B].as_interface(@@alpha_interface).new.delta
     }
     assert_raise(ArgumentError) {
-      B.as_interface(@@alpha_interface).new.delta(1)
+      Cube[B].as_interface(@@alpha_interface).new.delta(1)
     }
     assert_raise(Cube::Interface::TypeMismatchError) {
-      B.as_interface(@@alpha_interface).new.delta(1, 2)
+      Cube[B].as_interface(@@alpha_interface).new.delta(1, 2)
     }
     assert_raise(Cube::Interface::TypeMismatchError) {
-      B.as_interface(@@alpha_interface).new.delta(1, "2", "3")
+      Cube[B].as_interface(@@alpha_interface).new.delta(1, "2", "3")
     }
     assert_nothing_raised {
-      B.as_interface(@@alpha_interface).new.delta(1, "2")
+      Cube[B].as_interface(@@alpha_interface).new.delta(1, "2")
     }
     assert_nothing_raised {
-      B.as_interface(@@alpha_interface).new.delta(1, "2", 3)
+      Cube[B].as_interface(@@alpha_interface).new.delta(1, "2", 3)
     }
   end
 
