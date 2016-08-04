@@ -79,6 +79,13 @@ class TC_Interface < Test::Unit::TestCase
 
   def test_runtime_error_check
     assert_nothing_raised {
+      Cube[Cube[B]]
+    }
+    assert(Cube[B].is_a?(Cube::CubeMethods))
+    assert_raise(ArgumentError) {
+      Cube[@@gamma_interface]
+    }
+    assert_nothing_raised {
       Cube[B].as_interface(@@alpha_interface).as_interface(@@alpha_interface)
     }
     assert_nothing_raised {

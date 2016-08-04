@@ -9,6 +9,27 @@ require 'set'
 # Top level module for RubyCube
 module Cube
   module Interface
+
+    def self.match_specs(i1specs, i2specs)
+      i1specs.each do |meth, i1spec|
+        i2spec = i2specs[meth]
+        raise InterfaceMatchError, "Method `#{meth}` not found" unless i2spec
+        i2_in = i2spec[:in]
+        i1_in = i1spec[:in]
+        if i1_in && (!i2_in || i1_in.size != i2_in.size)
+          raise InterfaceMatchError, "Method `#{meth}` prototype does not match"
+        end
+        (i1_in || []).each_index do |i|
+          Cube.check_type_spec(i1_in[i], i2_in[i]) { |t1, t2| t2 == t1 }
+        end
+        i1_out = i1spec[:out]
+        if i1_out
+          i2_out = i2spec[:out]
+          raise InterfaceMatchError, "Method `#{meth}` prototype does not match" unless i2_out
+          Cube.check_type_spec(i1_out, i2_out) { |t1, t2| t2 == t1 }
+        end
+      end
+    end
     # The version of the interface library.
     Interface::VERSION = '0.2.0'
 
@@ -18,6 +39,7 @@ module Cube
     class PublicVisibleMethodMissing < MethodMissing; end
     class MethodArityError < RuntimeError; end
     class TypeMismatchError < RuntimeError; end
+    class InterfaceMatchError < RuntimeError; end
 
     alias :extends :extend
 
@@ -47,7 +69,7 @@ module Cube
 
       # Store required method ids
       inherited_specs = map_spec(inherited_ids.flatten)
-      specs = @ids.merge(inherited_specs)
+      specs = to_spec
       ids = @ids.keys + map_spec(inherited_ids.flatten).keys
       @unreq ||= []
 
@@ -174,6 +196,25 @@ module Cube
     def required_public_methods
       @ids.keys
     end
+
+    def to_spec
+      inherited = (self.ancestors-[self]).select{ |x| Interface === x }
+      inherited_ids = inherited.map{ |x| x.instance_variable_get('@ids') }
+
+      # Store required method ids
+      inherited_specs = map_spec(inherited_ids.flatten)
+      @ids.merge(inherited_specs)
+    end
+
+
+    def assert_match(intf)
+      raise ArgumentError, "#{intf} is not a Cube::Interface" unless intf.is_a?(Interface)
+      intf_specs = intf.to_spec
+      self_specs = to_spec
+      Interface.match_specs(self_specs, intf_specs)
+    end
+
+        
 
     def proto(meth, *args)
       out_spec = yield if block_given?
