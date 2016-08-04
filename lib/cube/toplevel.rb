@@ -1,4 +1,9 @@
 module Cube
+  def self.mark_interface!(cls, iface)
+    Cube[cls].as_interface(iface, runtime_checks: false)
+    cl_iface = iface.impotent
+    cls.include(cl_iface)
+  end
 
   def self.[](mod)
     return mod if mod.is_a?(CubeMethods)
@@ -21,7 +26,8 @@ module Cube
   end
 
   def self.trait(&blk)
-    m = Module.new.extend(Cube::Trait)
+    m = Module.new
+    m.extend(Cube::Trait)
     m.module_exec(&blk) if block_given?
     m
   end
@@ -79,13 +85,14 @@ module Cube
       raise ArgumentError, "#{iface} is not a Cube::Interface" unless iface.is_a?(Cube::Interface)
       implements = lambda { |this|
         unless this.is_a? Class
-          raise "Non-Class modules should not implement interfaces"
+          raise "Non-Class modules cannot implement interfaces"
         end
         this.instance_variable_set(:@__interface_runtime_check, true) if runtime_checks
         this.include(iface)
       }
       implements.call(clone)
     end
+
 
     def shell_implements(mod)
       instance_variable_set(:@__interface_runtime_check, false)

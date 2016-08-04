@@ -34,7 +34,7 @@ module Cube
         intf = @__interface_trait_required_interface
         mod.include?(intf) || mod.as_interface(intf, runtime_checks: false)
       end
-      super(mod)
+      super
     end
 
     def wrap(intf)
@@ -94,7 +94,7 @@ class Module
     cl = trait.clone
     cl.module_exec do
       suppress.each do |sup|
-        undef_method(sup)
+        remove_method(sup)
       end
       aliases.each do |before, after|
         begin
@@ -103,7 +103,7 @@ class Module
           $stderr.puts "with_trait(#{trait}): #{e.message}"
           raise ArgumentError, "with_trait(#{trait}): #{e.message}"
         end
-        undef_method(before)
+        remove_method(before)
       end
     end
     cl

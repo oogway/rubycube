@@ -39,20 +39,15 @@ p c.pos([1, 2, 3], 4)
 AdvancedCalculator = Cube.interface {
   extend Calculator
   proto(:product, Integer, Integer) { Integer }
+  proto(:avg, [Integer]) { Float }
 }
 
-module AdvancedCalcT
-  extend Cube::Trait
+ProductCalcT = Cube.trait do
   def product(a, b)
     ret = 0
     a.times { ret = sum([ret, b]) }
     ret
   end
-
-  def sum; end # A class method always takes precedence, no conflict here
-  def foo; end # this conflicts with DummyCalcT. Needs to be aliased (see below)
-  def bar; end # this conflicts with DummyCalcT. Needs to be aliased (see below)
-
   # This specifies the interface that the including Class must satisfy in order for
   # this trait to work properly.
   # Eg, the product method above uses `sum`, which it expects to get from the including
@@ -61,28 +56,22 @@ module AdvancedCalcT
                            # even if this trait itself has a `sum` method
 end
 
-module DummyCalcT
-  extend Cube::Trait
-  def sum; end # this method conflicts with AdvancedCalcT, but SimpleCalc#sum takes precedence
-  def foo; end
-  def bar; end
-  class << self
-    def included(_)
-      $stderr.puts "Works like a regular module as well"
-    end
+StatsCalcT = Cube.trait do
+  def product; end
+
+  def avg(arr)
+    arr.reduce(0, &:+) / arr.size
   end
 end
-
+#
 # This is how we compose behaviours
 # AdvancedCalc is a class which mixes traits AdvancedCalcT and DummyCalcT
 # into SimpleCalc and implements the interface AdvancedCalculator
 # To avoid conflicts, alias methods in AdvancedCalcT (otherwise error will be raised)
 # One can also suppress methods in DummyCalcT
-AdvancedCalc = SimpleCalc.with_trait(AdvancedCalcT,
-                                     aliases: { foo: :adfoo, bar: :adbar })
-                         .with_trait(DummyCalcT, suppresses: [:foo, :bar])
+AdvancedCalc = SimpleCalc.with_trait(ProductCalcT)
+                         .with_trait(StatsCalcT, suppress: [:product])
                          .as_interface(AdvancedCalculator)
-
 sc = AdvancedCalc.new
 p sc.product(3, 2)
 

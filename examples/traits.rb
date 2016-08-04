@@ -57,8 +57,9 @@ Services = {
   android: AndroidCombinedNotifier.wrap(MobileEmailUser),
   ios: IOSCombinedNotifier.wrap(MobileEmailUser)
 }
-
-User = Cube[Struct.new(:email, :mobile_number, :type)].as_interface(MobileEmailUser)
+User = Struct.new(:email, :mobile_number, :type)
+Cube.mark_interface!(User, MobileEmailUser)
+CubeUser = Cube[User].as_interface(MobileEmailUser)
 
 u1 = User.new('u1@foo.com', '1234567890', :android)
 u2 = User.new('u2@foo.com', '1234567899', :ios)
