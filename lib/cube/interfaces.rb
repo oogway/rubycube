@@ -30,8 +30,6 @@ module Cube
         end
       end
     end
-    # The version of the interface library.
-    Interface::VERSION = '0.2.0'
 
     # Exceptions thrown while checking interfaces
     class MethodMissing < RuntimeError; end

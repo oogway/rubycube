@@ -2,7 +2,7 @@ require 'rubygems'
 
 Gem::Specification.new do |spec|
   spec.name       = 'rubycube'
-  spec.version    = '0.2.2'
+  spec.version    = '0.3.0'
   spec.author     = 'Aditya Godbole'
   spec.license    = 'Artistic 2.0'
   spec.email      = 'code.aa@gdbl.me'

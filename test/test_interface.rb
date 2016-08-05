@@ -50,10 +50,6 @@ class TC_Interface < Test::Unit::TestCase
     Cube.check_type(@@gamma_interface, arg)
   end
 
-  def test_version
-    assert_equal('0.2.0', Cube::Interface::VERSION)
-  end
-
   def test_interface_requirements_not_met
     assert_raise(Cube::Interface::PublicVisibleMethodMissing){ A.extend(@@alpha_interface) }
     assert_raise(Cube::Interface::PublicVisibleMethodMissing){ A.new.extend(@@alpha_interface) }
