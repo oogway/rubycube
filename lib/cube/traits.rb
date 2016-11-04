@@ -24,7 +24,14 @@ module Cube
       conflicts = public_instance_methods & mod.public_instance_methods
       errors = conflicts.map { |c|
         meth = mod.instance_method(c)
-        { meth: meth, owner: meth.owner } unless meth.owner.is_a?(Class)
+        if meth.owner.is_a?(Class)
+          if meth.owner == mod.superclass
+            module_exec { remove_method(c) }
+          end
+          nil
+        else
+          { meth: meth, owner: meth.owner }
+        end
       }.compact
       unless errors.empty?
         message = "\n" + errors.map { |e| e[:meth].to_s }.join("\n")

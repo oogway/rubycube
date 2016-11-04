@@ -13,6 +13,10 @@ module Cube
     Class.new(mod).extend(CubeMethods)
   end
 
+  def self.with_super(mod)
+    self[Class.new(mod)]
+  end
+
   class << self
     alias_method :from, :[]
   end
