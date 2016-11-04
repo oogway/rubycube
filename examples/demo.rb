@@ -1,5 +1,6 @@
 # run as `RUBY_CUBE_TYPECHECK= 1 ruby examples/demo.rb`
-require_relative '../lib/cube'
+#require_relative '../lib/cube'
+require 'cube'
 
 Adder = Cube.interface {
   # sum is a method that takes an array of Integer and returns an Integer

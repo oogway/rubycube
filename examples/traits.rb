@@ -1,5 +1,6 @@
 ENV['RUBY_CUBE_TYPECHECK'] = "1"
-require_relative '../lib/cube'
+#require_relative '../lib/cube'
+require 'cube'
 EmailNotifierT = Cube.trait do
   def notify
     puts "email sent to #{email}"
