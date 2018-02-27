@@ -1,3 +1,5 @@
+require 'dry-types'
+
 module Cube
   def self.mark_interface!(cls, iface)
     Cube[cls].as_interface(iface, runtime_checks: false)
@@ -36,49 +38,36 @@ module Cube
     m
   end
 
-  def self.check_type_spec(t, v, &blk)
-    if t.is_a?(Set)
-      if v.is_a?(Set)
-        if v != t
-          raise Cube::Interface::TypeMismatchError, "#{t.to_a} is not eql to #{v.to_a}"
-        end
-        return true
-      end
-      unless t.any? { |tp| check_type(tp, v, &blk) rescue false }
-        raise Cube::Interface::TypeMismatchError,
-          "#{v.inspect} is not any of #{t.to_a}"
-      end
-      return
-    end
-    if t.is_a? Array
-      raise Cube::Interface::TypeMismatchError,
-        "#{v} is not an Array" unless v.is_a? Array
-      check_type(t.first, v.first, &blk)
-      check_type(t.first, v.last, &blk)
-      return
-    end
-    raise Cube::Interface::TypeMismatchError, "#{v.inspect} is not type #{t}" unless blk.call(t, v) 
-    true
-  end
+#  def self.check_type_spec(t, v, &blk)
+#    if t.is_a?(Set)
+#      if v.is_a?(Set)
+#        if v != t
+#          raise Cube::Interface::TypeMismatchError, "#{t.to_a} is not eql to #{v.to_a}"
+#        end
+#        return true
+#      end
+#      unless t.any? { |tp| check_type(tp, v, &blk) rescue false }
+#        raise Cube::Interface::TypeMismatchError,
+#          "#{v.inspect} is not any of #{t.to_a}"
+#      end
+#      return
+#    end
+#    if t.is_a? Array
+#      raise Cube::Interface::TypeMismatchError,
+#        "#{v} is not an Array" unless v.is_a? Array
+#      check_type(t.first, v.first, &blk)
+#      check_type(t.first, v.last, &blk)
+#      return
+#    end
+#    raise Cube::Interface::TypeMismatchError, "#{v.inspect} is not type #{t}" unless blk.call(t, v) 
+#    true
+#  end
 
   if ENV['RUBY_CUBE_TYPECHECK'].to_i > 0
     def self.check_type(t, v)
-      if t.is_a?(Set)
-        unless t.any? { |tp| check_type(tp, v) rescue false }
-          raise Cube::Interface::TypeMismatchError,
-                "#{v.inspect} is not any of #{t.to_a}"
-        end
-        return
-      end
-      if t.is_a? Array
-        raise Cube::Interface::TypeMismatchError,
-              "#{v} is not an Array" unless v.is_a? Array
-        check_type(t.first, v.first)
-        check_type(t.first, v.last)
-        return
-      end
+      return t[v] if t.is_a? Dry::Types::Type
       raise Cube::Interface::TypeMismatchError, "#{v.inspect} is not type #{t}" unless v.is_a? t
-      true
+      v
     end
   else
     def self.check_type(*_); end

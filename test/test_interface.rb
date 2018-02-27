@@ -5,15 +5,19 @@
 #####################################################
 ENV['RUBY_CUBE_TYPECHECK'] = "1"
 require 'test-unit'
-require 'cube'
+require_relative '../lib/cube'
+require 'dry-types'
 
+module Types
+  include Dry::Types.module
+end
 
 class TC_Interface < Test::Unit::TestCase
   def self.startup
     alpha_interface = Cube.interface{
       public_visible(:alpha, :beta)
-      proto(:beta) { [Integer, NilClass].to_set }
-      proto(:delta, Integer, String, Integer) { Integer }
+      proto(:beta) { Types::Strict::Int|Types::Strict::Nil }
+      proto(:delta, Types::Strict::Int, Types::Strict::String, Types::Strict::Int) { Types::Strict::Int }
     }
 
     gamma_interface = Cube.interface{
@@ -84,9 +88,9 @@ class TC_Interface < Test::Unit::TestCase
     assert_nothing_raised {
       Cube[B].as_interface(@@alpha_interface).as_interface(@@alpha_interface)
     }
-    assert_nothing_raised {
+#    assert_nothing_raised {
       Cube[B].as_interface(@@alpha_interface, runtime_checks: true).new.beta
-    }
+#    }
     assert_raise(ArgumentError) {
       Cube[B].as_interface(@@alpha_interface).new.delta
     }

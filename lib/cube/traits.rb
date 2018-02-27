@@ -43,38 +43,6 @@ module Cube
       end
       super
     end
-
-    def wrap(intf)
-      assert_match(intf)
-      cls = Class.new(SimpleDelegator) do
-        define_method(:initialize) do |obj|
-          $stderr.puts "Checking with #{intf}"
-          Cube.check_type(intf, obj)
-          super(obj)
-        end
-      end
-      inc_trait = clone
-      inc_trait.instance_variable_set(:@__interface_trait_required_interface, nil)
-      inc_trait.instance_variable_set(:@__trait_cloned_from, self)
-      Cube[cls].with_trait(inc_trait)
-    end
-
-    def assert_match(intf)
-      self_methods = instance_methods
-      inherited = self.ancestors.select{ |x| Trait === x }
-      required_interface_spec = inherited.inject({}) { |acc, x|
-        req = x.instance_variable_get('@__interface_trait_required_interface')
-        if req
-          acc.merge(req.to_spec)
-        else
-          acc
-        end
-      }
-      self_methods.each do |sm|
-        required_interface_spec.delete(sm)
-      end
-      Interface.match_specs(required_interface_spec, intf.to_spec)
-    end
   end
 end
 

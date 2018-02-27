@@ -1,19 +1,24 @@
 # run as `RUBY_CUBE_TYPECHECK= 1 ruby examples/demo.rb`
 #require_relative '../lib/cube'
 require 'cube'
+require 'dry-types'
+
+module Types
+  include Dry::Types.module
+end
 
 Adder = Cube.interface {
-  # sum is a method that takes an array of Integer and returns an Integer
-  proto(:sum, [Integer]) { Integer }
+  # sum is a method that takes an array of Types::Strict::Int and returns an Types::Strict::Int
+  proto(:sum, [Types::Strict::Int]) { Types::Strict::Int }
 }
 
 Calculator = Cube.interface {
   # interfaces can be composed
   extends Adder
-  # method fact takes an Integer and returns an Integer
-  proto(:fact, Integer) { Integer }
-  # method pos takes an array of Integers, an Integer, and returns either Integer or nil
-  proto(:pos, [Integer], Integer) { [Integer, NilClass].to_set }
+  # method fact takes an Types::Strict::Int and returns an Types::Strict::Int
+  proto(:fact, Types::Strict::Int) { Types::Strict::Int }
+  # method pos takes an array of Types::Strict::Ints, an Types::Strict::Int, and returns either Types::Strict::Int or nil
+  proto(:pos, [Types::Strict::Array], Types::Strict::Int) { Types::Strict::Int|Types::Strict::Nil }
 }
 
 class SimpleCalcImpl
@@ -39,8 +44,8 @@ p c.pos([1, 2, 3], 4)
 
 AdvancedCalculator = Cube.interface {
   extend Calculator
-  proto(:product, Integer, Integer) { Integer }
-  proto(:avg, [Integer]) { Float }
+  proto(:product, Types::Strict::Int, Types::Strict::Int) { Types::Strict::Int }
+  proto(:avg, [Types::Strict::Int]) { Types::Strict::Float }
 }
 
 ProductCalcT = Cube.trait do

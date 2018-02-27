@@ -1,5 +1,6 @@
 require 'securerandom'
 require 'set'
+require 'dry-types'
 # A module for implementing Java style interfaces in Ruby. For more information
 # about Java interfaces, please see:
 #
@@ -9,28 +10,6 @@ require 'set'
 # Top level module for RubyCube
 module Cube
   module Interface
-
-    def self.match_specs(i1specs, i2specs)
-      i1specs.each do |meth, i1spec|
-        i2spec = i2specs[meth]
-        raise InterfaceMatchError, "Method `#{meth}` not found" unless i2spec
-        i2_in = i2spec[:in]
-        i1_in = i1spec[:in]
-        if i1_in && (!i2_in || i1_in.size != i2_in.size)
-          raise InterfaceMatchError, "Method `#{meth}` prototype does not match"
-        end
-        (i1_in || []).each_index do |i|
-          Cube.check_type_spec(i1_in[i], i2_in[i]) { |t1, t2| t2 == t1 }
-        end
-        i1_out = i1spec[:out]
-        if i1_out
-          i2_out = i2spec[:out]
-          raise InterfaceMatchError, "Method `#{meth}` prototype does not match" unless i2_out
-          Cube.check_type_spec(i1_out, i2_out) { |t1, t2| t2 == t1 }
-        end
-      end
-    end
-
     # Exceptions thrown while checking interfaces
     class MethodMissing < RuntimeError; end
     class PrivateVisibleMethodMissing < MethodMissing; end
@@ -131,28 +110,26 @@ module Cube
       # replace method with a type checking wrapper
       mod.class_exec do
         # random alias name to avoid conflicts
-        ns_meth_name = "#{id}_#{SecureRandom.hex(3)}".to_sym 
+        ns_meth_name = "#{id}_#{SecureRandom.hex(3)}".to_sym
         alias_method ns_meth_name, id
         # The type checking wrapper
         define_method(id) do |*args|
-          args.each_index do |i|
-            # the value and expected type of the arg
-            v, t = args[i], inchecks[i]
+          new_args = args.zip(inchecks).map do |v, t|
             begin
-              Cube.check_type(t, v)
-            rescue Interface::TypeMismatchError => e
+              Cube.check_type(t,v)
+            rescue Dry::Types::ConstraintError => e
               raise Interface::TypeMismatchError,
-                    "#{mod}: #{iface}##{id} (arg: #{i}): #{e.message}"
+                    "#{mod}: #{iface}##{id} : #{e.message}"
             end
           end
           # types look good, call the original method
-          ret = send(ns_meth_name, *args)
+          ret = send(ns_meth_name, *new_args)
           # check return type if it exists
           begin
             Cube.check_type(outcheck, ret) if outcheck
-          rescue Interface::TypeMismatchError => e
+          rescue Dry::Types::ConstraintError => e
             raise Interface::TypeMismatchError,
-              "#{mod}: #{iface}##{id} (return): #{e.message}"
+                  "#{mod}: #{iface}##{id} (return): #{e.message}"
           end
           # looks good, return
           ret
@@ -174,12 +151,8 @@ module Cube
     # validate the interface spec is valid
     def validate_spec(spec)
       [*spec].each do |t|
-        if t.is_a?(Array)
-          unless t.first.is_a?(Module)
-            raise ArgumentError, "#{t} does not contain a Module or Interface"
-          end
-        elsif !t.is_a?(Module)
-          raise ArgumentError, "#{t} is not a Module or Interface"
+        unless t.is_a?(Dry::Types::Type) || t.is_a?(Module)
+          raise ArgumentError, "#{t} is not a Dry::Types::Type nor a Module"
         end
       end
     end
@@ -201,13 +174,6 @@ module Cube
       # Store required method ids
       inherited_specs = map_spec(inherited_ids.flatten)
       @ids.merge(inherited_specs)
-    end
-
-    def assert_match(intf)
-      raise ArgumentError, "#{intf} is not a Cube::Interface" unless intf.is_a?(Interface)
-      intf_specs = intf.to_spec
-      self_specs = to_spec
-      Interface.match_specs(self_specs, intf_specs)
     end
 
     def proto(meth, *args)

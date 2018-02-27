@@ -15,6 +15,8 @@ Gem::Specification.new do |spec|
 
   spec.extra_rdoc_files = ['README.md', 'CHANGES', 'MANIFEST', 'examples/demo.rb']
 
+  spec.add_dependency('dry-types')
+  spec.add_development_dependency('dry-types')
   spec.add_development_dependency('test-unit')
   spec.add_development_dependency('rake')
 
